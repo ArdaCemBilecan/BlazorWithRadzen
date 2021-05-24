@@ -30,7 +30,7 @@ namespace BlazorApp1
             services.AddRazorPages();
             services.AddServerSideBlazor().AddCircuitOptions(o => { o.DetailedErrors = true; });
             
-            var connection = @"Server =(localdb)\mssqllocaldb; Database=PlaneDb; Trusted_Connection=true";
+            var connection = @""Data Source=DESKTOP-IFPUO38;initial catalog=Travelers;Integrated Security=True";
             services.AddDbContextFactory<AppDbcontext>(options => options.UseSqlServer(connection));
             services.AddDbContext<AppDbcontext>(options => options.UseSqlServer(connection));
             
