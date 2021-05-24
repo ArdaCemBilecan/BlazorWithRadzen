@@ -1,0 +1,209 @@
+﻿@page "/"
+@using System.Drawing
+@using BlazorApp1.Data
+@inject BlazorApp1.Data.PlaneServices service
+
+
+<div class="container">
+    <div class="row bg-light">
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Plane Id</th>
+                    <th>Plane Name</th>
+                    <th>Ticket price</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (ucaklar.Any())
+                {
+                    @foreach (var plane in ucaklar)
+                    {
+                        <tr @onclick="(() => SetPlaneForUpdate(plane))">
+                            <td>@plane.Id</td>
+                            <td>@plane.PlaneName</td>
+                            <td>@plane.TicketPrice</td>
+                            <td>@plane.X</td>
+                            <td>@plane.Y</td>
+                            <td>@plane.Description</td>
+                            <td><button class="btn btn-danger" @onclick="(() => DeletePlane(plane))">Delete</button></td>
+                            <td><button class="btn btn-danger" @onclick="(() => ShowLocation(plane))">Show</button></td>
+                        </tr>
+                    } }
+                else
+                {
+                    <tr><td colspan="6"><strong>No products available</strong></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="row m-5">
+        <div class="col-5 bg-light m-2 justify-content-start">
+            <div class="p-3 mb-3 bg-primary text-white text-center">Add New PLane</div>
+
+            <EditForm Model="@NewPlane">
+                <div class="form-group">
+                    <label for="PlaneName">Plane Name</label>
+                    <input type="text" id="PlaneName" class="form-control" @bind-value="@NewPlane.PlaneName" />
+                </div>
+
+                <div class="form-group">
+                    <label for="price">Ticket Price</label>
+                    <input type="text" id="TicketPrice" class="form-control" @bind="@NewPlane.TicketPrice" />
+                </div>
+
+                <div class="form-group">
+                    <label for="Description">Description</label>
+                    <input type="text" id="Description" class="form-control" @bind="@NewPlane.Description" />
+                </div>
+
+                <div class="form-group">
+                    <p>X = @lat</p>
+                </div>
+                <hr />
+                <div class="form-group">
+                    <p>Y = @lng</p>
+
+                </div>
+
+                <div class="text-center p-3 mb-3">
+                    <button class="btn btn-info" @onclick="AddNewPlane"> Add Plane</button>
+                </div>
+            </EditForm>
+        </div>
+
+
+        <div class="col-5 bg-light m-2 justify-content-end">
+            <div class="p-3 mb-1 bg-primary text-white text-center">Update Plane</div>
+
+            <EditForm Model="@UpdatedPlane">
+                <div class="form-group">
+                    <label for="name">Plane Name</label>
+                    <input type="text" id="name" class="form-control" @bind-value="@UpdatedPlane.PlaneName" />
+                </div>
+
+                <div class="form-group">
+                    <label for="price">Ticket Price</label>
+                    <input type="text" id="price" class="form-control" @bind="@UpdatedPlane.TicketPrice" />
+                </div>
+
+                <div class="form-group">
+                    <label for="Description">Description</label>
+                    <input type="text" id="Description" class="form-control" @bind="@UpdatedPlane.Description" />
+                </div>
+
+                <div class="form-group">
+                    <label for="Description">Latitude</label>
+                    <input type="text" id="latitude" class="form-control" @bind="@UpdatedPlane.X" />
+                </div>
+                <div class="form-group">
+                    <label for="Description">Longitude</label>
+                    <input type="text" id="longitude" class="form-control" @bind="@UpdatedPlane.Y" />
+                </div>
+                <div class="text-center p-3 mb-3">
+                    <button class="btn btn-info" @onclick="PlaneForUpdate"> Update Product</button>
+                </div>
+            </EditForm>
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+<div class="row">
+    <div class="col-xl-6">
+        <RadzenGoogleMap style="height: 500px; width:100%" Zoom=@zoom Center=@(new GoogleMapPosition() { Lat = 42.6977, Lng = 23.3219 }) MapClick=@OnMapClick MarkerClick=@OnMarkerClick>
+            <Markers>
+                <RadzenGoogleMapMarker Title="Plane" Label="Plane is here now" Position=@(new GoogleMapPosition() { Lat = x, Lng = y }) />
+                <RadzenGoogleMapMarker Title="Clicked" Label="Clicked" Position=@(new GoogleMapPosition() { Lat = lat, Lng = lng }) />
+            </Markers>
+        </RadzenGoogleMap>
+        <br /><br /><br />
+    </div>
+    <hr />
+</div>
+
+@code {
+
+
+    List<Plane> ucaklar = new List<Plane>();
+
+    int zoom = 3;
+    bool showMadridMarker;
+    string clickedPosition = "";
+    double x, y, lat, lng;
+
+
+    public Plane NewPlane { get; set; } = new Plane();
+    private async Task AddNewPlane()
+    {
+        NewPlane.X = Convert.ToDecimal(lat);
+        NewPlane.Y = Convert.ToDecimal(lng);
+        await service.AddPlaneAsync(NewPlane);
+        NewPlane = new Plane();
+        await LoadPlanes();
+    }
+
+
+    void OnMapClick(GoogleMapClickEventArgs args)
+    {
+        clickedPosition = $"Map clicked at Lat: {args.Position.Lat}, Lng: {args.Position.Lng}";
+        lat = args.Position.Lat;
+        lng = args.Position.Lng;
+
+
+
+    }
+
+    void OnMarkerClick(RadzenGoogleMapMarker marker)
+    {
+        clickedPosition = $"Map {marker.Title} marker clicked. Marker position -> Lat: {marker.Position.Lat}, Lng: {marker.Position.Lng}";
+    }
+
+    void ShowLocation(Plane plane)
+    {
+        x = Decimal.ToDouble(plane.X);
+        y = Decimal.ToDouble(plane.Y);
+
+    }
+
+    private async Task LoadPlanes()
+    {
+        ucaklar = await service.GetPlaneAsync();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlanes();
+    }
+
+    public Plane UpdatedPlane = new Plane();
+
+    private void SetPlaneForUpdate(Plane plane)
+    {
+        UpdatedPlane = plane;
+    }
+
+    private async Task PlaneForUpdate()
+    {
+        await service.UpdatePlaneAsync(UpdatedPlane);
+        await LoadPlanes();
+    }
+
+
+    private async Task DeletePlane(Plane plane)
+    {
+        await service.DeletePlaneAsync(plane);
+
+        await LoadPlanes();
+    }
+
+
+}
